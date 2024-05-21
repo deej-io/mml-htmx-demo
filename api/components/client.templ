@@ -1,0 +1,9 @@
+package components
+
+import "fmt"
+
+templ Client(wsUrl string) {
+	<html>
+		<script src={ string(templ.URL(fmt.Sprintf("https://cdn.jsdelivr.net/npm/mml-web-client@0.11.2?websocketUrl=%s", wsUrl))) }></script>
+	</html>
+}

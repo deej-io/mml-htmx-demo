@@ -1,0 +1,160 @@
+package components
+
+import (
+	"github.com/fatih/structs"
+	"deej.io/mml-htmx-demo/api/mml"
+	"fmt"
+)
+
+func Attrs(model any) (attrs templ.Attributes) {
+	attrs = structs.Map(model)
+	for k, v := range attrs {
+		if _, ok := v.(bool); !ok {
+			attrs[k] = fmt.Sprintf("%v", v)
+		}
+	}
+	return
+}
+
+templ All(components ...templ.Component) {
+	for _, component := range components {
+		@component
+	}
+}
+
+
+templ Light(model mml.Light) {
+	<m-light
+		{ Attrs(model)... }
+	></m-light>
+}
+
+templ ConnectedClients(count int) {
+	<m-label
+		id="connected-label"
+		content={ fmt.Sprintf("Connected clients: %d", count) }
+		y="2"
+		width="5"
+		height="0.5"
+		color="#bfdbfe"
+		font-color="#172554"
+		alignment="center"
+	>
+		<div hidden hx-swap="outerHTML" hx-target="#connected-label" hx-trigger="connected from:window" hx-post="/connected"></div>
+		<div hidden hx-swap="outerHTML" hx-target="#connected-label" hx-trigger="disconnected from:window" hx-post="/disconnected"></div>
+	</m-label>
+}
+
+type Easing string
+const (
+	EaseOutSine Easing = "easeOutSine"
+	EaseOutBounce Easing = "easeOutBounce"
+	EaseOutCubic Easing = "easeOutCubic"
+)
+
+// TODO: make these type-safe
+type Animation struct {
+	ID string
+	Easing Easing
+	Attr string // TODO make this an enum?
+	DurationMs int64
+	StartTimeMs int64
+	Start int
+	End int
+	Loop bool
+	// TODO add the rest
+}
+
+templ Dice(value int, anims []Animation) {
+	<m-model
+		id="dice"
+		src="/assets/dice.glb"
+		y="1"
+		hx-trigger="click"
+		hx-swap="outerHTML"
+		hx-get={ fmt.Sprintf("/roll?from=%d", value) }
+	>
+		@Animations(anims)
+	</m-model>
+}
+
+templ Animations(anims []Animation) {
+	for _, anim := range anims {
+		<m-attr-anim
+			id={ anim.ID }
+			easing={ fmt.Sprintf("%v", anim.Easing) }
+			attr={ anim.Attr }
+			duration={ fmt.Sprintf("%d", anim.DurationMs) }
+			start-time={ fmt.Sprintf("%d", anim.StartTimeMs) }
+			start={ fmt.Sprintf("%d", anim.Start) }
+			end={ fmt.Sprintf("%d", anim.End) }
+			loop={ fmt.Sprintf("%t", anim.Loop) }
+		></m-attr-anim>
+	}
+}
+
+templ DiceClickLabel(count int, oob bool) {
+	<m-label
+		id="click-label"
+		width="5"
+		height="0.5"
+		color="#bfdbfe"
+		font-color="#172554"
+		alignment="center"
+		content="Click the dice!"
+		if oob {
+			hx-swap-oob="true"
+		}
+	></m-label>
+}
+
+templ Init(light mml.Light) {
+	<html>
+		<head>
+			<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+			<meta name="htmx-config" content='{"selfRequestsOnly":false}'/>
+		</head>
+		<body>
+			@Light(light)
+			<!-- Labels -->
+			<m-group y="5">
+				<m-label
+					id="uptime-label"
+					y="3"
+					width="5"
+					height="0.5"
+					color="#bfdbfe"
+					font-color="#172554"
+					alignment="center"
+					hx-trigger="every 1s"
+					hx-get="/uptime"
+					hx-swap="outerHTML"
+				></m-label>
+				@ConnectedClients(0)
+				<m-label
+					id="change-light-button"
+					y="1"
+					width="5"
+					height="0.5"
+					color="#bfdbfe"
+					font-color="#172554"
+					alignment="center"
+					content="Click to change light colour with HTMX!"
+					hx-trigger="click"
+					hx-get="/light"
+					hx-target="#light"
+					hx-swap="outerHTML"
+				></m-label>
+				@DiceClickLabel(0, false)
+			</m-group>
+			<!-- Dice -->
+			@Dice(1, []Animation{
+				{ID: "y-up-anim", Easing: EaseOutSine,     Attr: "y",  StartTimeMs: 0, DurationMs: 300, Start: 1, End: 3, Loop: false},
+				{ID: "y-down-anim", Easing: EaseOutBounce, Attr: "y",  StartTimeMs: 0 + 300, DurationMs: 500, Start: 3, End: 1, Loop: false},
+				{ID: "rx-anim", Easing: EaseOutCubic,      Attr: "rx", StartTimeMs: 0, DurationMs: 500, Start: 0, End: 0, Loop: false},
+				{ID: "ry-anim", Easing: EaseOutCubic,      Attr: "ry", StartTimeMs: 0, DurationMs: 500, Start: 0, End: 0, Loop: false},
+				{ID: "rz-anim", Easing: EaseOutCubic,      Attr: "rz", StartTimeMs: 0, DurationMs: 500, Start: 0, End: 0, Loop: false},
+			})
+	</body>
+</html>
+}
