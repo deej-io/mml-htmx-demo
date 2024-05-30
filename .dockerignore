@@ -1,0 +1,7 @@
+# flyctl launch added from api/.gitignore
+api/**/tmp
+api/**/bin
+
+# flyctl launch added from mml-server/.gitignore
+mml-server/**/node_modules
+fly.toml
