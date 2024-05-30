@@ -18,7 +18,7 @@ func main() {
 	connections := make(map[string]struct{})
 	rolls := 0
 
-	mmlServerWSURI := os.Getenv("MML_SEVER_WS_URI")
+	mmlServerWSURI := os.Getenv("MML_SERVER_WS_URI")
 	if mmlServerWSURI == "" {
 		mmlServerWSURI = "ws://localhost:8081"
 	}

@@ -1,0 +1,28 @@
+# fly.toml app configuration file generated for mml-htmx-demo on 2024-05-30T22:10:12+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'mml-htmx-demo'
+primary_region = 'iad'
+
+[build]
+  [build.args]
+    GO_VERSION = '1.22.3'
+
+[env]
+  PORT = '8080'
+  MML_SERVER_WS_URI = "wss://mml-htmx-demo-ws.fly.dev"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

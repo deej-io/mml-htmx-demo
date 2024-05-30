@@ -10,13 +10,16 @@
   "author": "Daniel J. Rollins <me@deej.io>",
   "license": "MIT",
   "dependencies": {
-    "networked-dom-server": "^0.15.0",
     "@mml-io/observable-dom": "^0.15.0",
+    "networked-dom-server": "^0.15.0",
     "ws": "^8.17.0"
   },
   "overrides": {
     "@mml-io/observable-dom": {
       "jsdom": "deej-io/jsdom"
     }
+  },
+  "devDependencies": {
+    "@flydotio/dockerfile": "^0.5.7"
   }
 }
