@@ -4,6 +4,7 @@ import (
 	"github.com/fatih/structs"
 	"deej.io/mml-htmx-demo/api/mml"
 	"fmt"
+	"time"
 )
 
 func Attrs(model any) (attrs templ.Attributes) {
@@ -22,7 +23,6 @@ templ All(components ...templ.Component) {
 	}
 }
 
-
 templ Light(model mml.Light) {
 	<m-light
 		{ Attrs(model)... }
@@ -39,10 +39,42 @@ templ ConnectedClients(count int) {
 		color="#bfdbfe"
 		font-color="#172554"
 		alignment="center"
+		hx-swap="outerHTML"
+		hx-target="#connected-label" 
+		hx-vals="js:{ connectionId: event.detail.connectionId }"
 	>
-		<div hidden hx-swap="outerHTML" hx-target="#connected-label" hx-trigger="connected from:window" hx-post="/connected"></div>
-		<div hidden hx-swap="outerHTML" hx-target="#connected-label" hx-trigger="disconnected from:window" hx-post="/disconnected"></div>
+		<div hidden hx-trigger="connected from:window" hx-post="/connected"></div>
+		<div hidden hx-trigger="disconnected from:window" hx-post="/disconnected"></div>
 	</m-label>
+}
+
+func makeUptimeText(uptime time.Duration) string {
+	uptimeMinutes := int(uptime.Minutes())
+	uptimeSeconds := int(uptime.Seconds()) - uptimeMinutes * 60
+	var uptimeText string
+	if uptimeMinutes > 0 {
+		uptimeText = fmt.Sprintf("Uptime: %dm %2ds", uptimeMinutes, uptimeSeconds)
+	} else {
+		uptimeText = fmt.Sprintf("Uptime: %ds", uptimeSeconds)
+	}
+	return uptimeText
+}
+
+templ Uptime(uptime time.Duration) {
+	<m-label
+		id="uptime-label"
+		content={ makeUptimeText(uptime) }
+		y="3"
+		width="5"
+		height="0.5"
+		color="#bfdbfe"
+		font-color="#172554"
+		alignment="center"
+		hx-trigger="every 1s"
+		hx-get="/uptime"
+		hx-vals="js:{ts: document.timeline.currentTime}"
+		hx-swap="outerHTML"
+		></m-label>
 }
 
 type Easing string
@@ -67,12 +99,14 @@ type Animation struct {
 
 templ Dice(value int, anims []Animation) {
 	<m-model
+		hx-ext="morphdom-swap"
 		id="dice"
 		src="/assets/dice.glb"
 		y="1"
 		hx-trigger="click"
-		hx-swap="outerHTML"
-		hx-get={ fmt.Sprintf("/roll?from=%d", value) }
+		hx-swap="morphdom"
+		hx-get="/roll"
+		hx-vals={ fmt.Sprintf("js:{ts: document.timeline.currentTime, from: %d}", value) }
 	>
 		@Animations(anims)
 	</m-model>
@@ -101,7 +135,11 @@ templ DiceClickLabel(count int, oob bool) {
 		color="#bfdbfe"
 		font-color="#172554"
 		alignment="center"
-		content="Click the dice!"
+		if count == 0 {
+			content="Click the dice!"
+		} else {
+			content={ fmt.Sprintf("%d clicks!", count) }
+		}
 		if oob {
 			hx-swap-oob="true"
 		}
@@ -112,12 +150,24 @@ templ Init(light mml.Light) {
 	<html>
 		<head>
 			<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+			<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/morphdom-swap.js"></script>
+			<script src="https://unpkg.com/morphdom@2.7.2/dist/morphdom-umd.js"></script>
 			<meta name="htmx-config" content='{"selfRequestsOnly":false}'/>
 		</head>
 		<body>
 			@Light(light)
 			<!-- Labels -->
 			<m-group y="5">
+				<m-label
+					id="htmx-label"
+					y="4"
+					width="5"
+					height="0.5"
+					color="#bfdbfe"
+					font-color="#172554"
+					alignment="center"
+					content="MML starter template in HTMX"
+				></m-label>
 				<m-label
 					id="uptime-label"
 					y="3"
@@ -139,7 +189,7 @@ templ Init(light mml.Light) {
 					color="#bfdbfe"
 					font-color="#172554"
 					alignment="center"
-					content="Click to change light colour with HTMX!"
+					content="Click to change light colour"
 					hx-trigger="click"
 					hx-get="/light"
 					hx-target="#light"

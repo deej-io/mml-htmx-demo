@@ -30,7 +30,7 @@ func Client(wsUrl string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(string(templ.URL(fmt.Sprintf("https://cdn.jsdelivr.net/npm/mml-web-client@0.11.2?websocketUrl=%s", wsUrl))))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(string(templ.URL(fmt.Sprintf("https://cdn.jsdelivr.net/npm/mml-web-client@0.15.0?websocketUrl=%s", wsUrl))))
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/client.templ`, Line: 7, Col: 123}
 		}
@@ -38,7 +38,7 @@ func Client(wsUrl string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></script></html>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></script><body><a href=\"https://github.com/deej-io/mml-htmx-demo\" target=\"_blank\" style=\"position: fixed; bottom: 1vw; left: 1vw; font-size: 2vw; z-index:2\">src: deej-io/mml-htmx-demo</a></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -4,15 +4,19 @@
   "type": "module",
   "description": "Networked DOM gerver for MML backend",
   "scripts": {
-    "preinstall": "./scripts/preinstall.sh",
     "start": "node src/index.js"
   },
   "keywords": [],
   "author": "Daniel J. Rollins <me@deej.io>",
   "license": "MIT",
   "dependencies": {
-    "networked-dom-server": "^0.14.0",
-    "@mml-io/observable-dom": "*",
+    "networked-dom-server": "^0.15.0",
+    "@mml-io/observable-dom": "^0.15.0",
     "ws": "^8.17.0"
+  },
+  "overrides": {
+    "@mml-io/observable-dom": {
+      "jsdom": "deej-io/jsdom"
+    }
   }
 }

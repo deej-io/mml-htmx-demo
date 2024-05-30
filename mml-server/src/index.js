@@ -12,8 +12,10 @@ const document = new EditableNetworkedDOM(
       callback,
       (htmlPath, htmlContents, params, callback) => {
         return new JSDOMRunner(htmlPath, htmlContents, params, callback, {
-          // Configure the JSDOMRunner using this optional config
-          allowResourceLoading: ["https://unpkg.com/htmx.org@1.9.12"],
+          allowResourceLoading: [
+            /https:\/\/unpkg.com\/htmx.org.*/,
+            /https:\/\/unpkg.com\/morphdom@.*/,
+          ],
         });
       },
     );

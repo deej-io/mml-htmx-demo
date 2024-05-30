@@ -15,8 +15,7 @@ import (
 )
 
 func main() {
-	startTime := time.Now();
-	connected := 0
+	connections := make(map[string]struct{})
 	rolls := 0
 
 	mmlServerWSURI := os.Getenv("MML_SEVER_WS_URI")
@@ -27,22 +26,21 @@ func main() {
 	fs := http.FileServer(http.Dir("./assets"))
 	http.Handle("/assets/", http.StripPrefix("/assets/", fs))
 
-	http.HandleFunc("/client", func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("GET /client")
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("GET /")
 		components.Client(mmlServerWSURI).Render(r.Context(), w)
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("GET /")
+	http.HandleFunc("/mml", func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("GET /mml")
 		light := mml.Light{
 			ID:        "light",
 			Type:      mml.LightTypePoint,
-			Intensity: 0.8,
+			Intensity: 300,
 			X: 5,
 			Y: 10,
 			Z: 5,
 		}
-
 		components.Init(light).Render(r.Context(), w)
 	})
 
@@ -51,7 +49,7 @@ func main() {
 		light := mml.Light{
 			ID:        "light",
 			Type:      mml.LightTypePoint,
-			Intensity: 0.8,
+			Intensity: 300,
 			Color:     colour,
 			X: 5,
 			Y: 10,
@@ -62,7 +60,10 @@ func main() {
 	})
 
 	http.HandleFunc("/uptime", func(w http.ResponseWriter, r *http.Request) {
-		uptime := time.Now().Sub(startTime)
+		r.ParseForm()
+		ts, _ := strconv.Atoi(r.Form.Get("ts"))
+		slog.Info("uptime", slog.Any("url", r.URL), slog.Any("form", r.Form))
+		uptime := time.Millisecond * time.Duration(ts)
 		uptimeMinutes := int(uptime.Minutes())
 		uptimeSeconds := int(uptime.Seconds()) - uptimeMinutes * 60
 		var uptimeText string
@@ -83,6 +84,7 @@ func main() {
 				alignment="center"
 				hx-trigger="every 1s"
 				hx-get="/uptime"
+				hx-vals="js:{ts: document.timeline.currentTime}"
 				hx-swap="outerHTML"
 			></m-label>
 		`, uptimeText)
@@ -91,13 +93,19 @@ func main() {
 
 
 	http.HandleFunc("/connected", func(w http.ResponseWriter, r *http.Request) {
-		connected++
-		components.ConnectedClients(connected).Render(r.Context(), w)
+		r.ParseForm()
+		id := r.Form.Get("connectionId")
+		connections[id] = struct{}{}
+		slog.Info("/connected", slog.String("connectionId", id), slog.Int("active", len(connections)))
+		components.ConnectedClients(len(connections)).Render(r.Context(), w)
 	})
 
 	http.HandleFunc("/disconnected", func(w http.ResponseWriter, r *http.Request) {
-		connected--
-		components.ConnectedClients(connected).Render(r.Context(), w)
+		r.ParseForm()
+		id := r.Form.Get("connectionId")
+		delete(connections, id)
+		slog.Info("/disconnected", slog.String("connectionId", id), slog.Int("active", len(connections)))
+		components.ConnectedClients(len(connections)).Render(r.Context(), w)
 	})
 
 	rollMap := [6][3]int{
@@ -110,17 +118,20 @@ func main() {
 	}
 
 	http.HandleFunc("/roll", func(w http.ResponseWriter, r *http.Request) {
-		from, _ := strconv.Atoi(r.URL.Query().Get("from")) // TODO handle error
-		//now := time.Now().Add(time.Millisecond * 100).UnixMilli()
+		r.ParseForm()
+		slog.Info("roll", slog.Any("url", r.URL), slog.Any("form", r.Form))
+		from, _ := strconv.Atoi(r.Form.Get("from"))
+		ts, _ := strconv.Atoi(r.Form.Get("ts"))
+		startTime := int64(ts)
 		to := rand.Intn(6)
 		current := rollMap[from]
 		target := rollMap[to]
 		anims := []components.Animation {
-			{ID: "y-up-anim", Easing: components.EaseOutSine,     Attr: "y",  StartTimeMs: 0, DurationMs: 300, Start: 1, End: 3, Loop: false},
-			{ID: "y-down-anim", Easing: components.EaseOutBounce, Attr: "y",  StartTimeMs: 0 + 300, DurationMs: 500, Start: 3, End: 1, Loop: false},
-			{ID: "rx-anim", Easing: components.EaseOutCubic,      Attr: "rx", StartTimeMs: 0, DurationMs: 500, Start: current[0], End: target[0], Loop: false},
-			{ID: "ry-anim", Easing: components.EaseOutCubic,      Attr: "ry", StartTimeMs: 0, DurationMs: 500, Start: current[1], End: target[1], Loop: false},
-			{ID: "rz-anim", Easing: components.EaseOutCubic,      Attr: "rz", StartTimeMs: 0, DurationMs: 500, Start: current[2], End: target[1], Loop: false},
+			{ID: "y-up-anim", Easing: components.EaseOutSine,     Attr: "y",  StartTimeMs: startTime, DurationMs: 300, Start: 1, End: 3, Loop: false},
+			{ID: "y-down-anim", Easing: components.EaseOutBounce, Attr: "y",  StartTimeMs: startTime + 300, DurationMs: 500, Start: 3, End: 1, Loop: false},
+			{ID: "rx-anim", Easing: components.EaseOutCubic,      Attr: "rx", StartTimeMs: startTime, DurationMs: 500, Start: current[0], End: target[0], Loop: false},
+			{ID: "ry-anim", Easing: components.EaseOutCubic,      Attr: "ry", StartTimeMs: startTime, DurationMs: 500, Start: current[1], End: target[1], Loop: false},
+			{ID: "rz-anim", Easing: components.EaseOutCubic,      Attr: "rz", StartTimeMs: startTime, DurationMs: 500, Start: current[2], End: target[2], Loop: false},
 		}
 		rolls++
 		components.All(

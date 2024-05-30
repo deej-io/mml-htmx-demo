@@ -14,6 +14,7 @@ import (
 	"deej.io/mml-htmx-demo/api/mml"
 	"fmt"
 	"github.com/fatih/structs"
+	"time"
 )
 
 func Attrs(model any) (attrs templ.Attributes) {
@@ -110,7 +111,56 @@ func ConnectedClients(count int) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" y=\"2\" width=\"5\" height=\"0.5\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\"><div hidden hx-swap=\"outerHTML\" hx-target=\"#connected-label\" hx-trigger=\"connected from:window\" hx-post=\"/connected\"></div><div hidden hx-swap=\"outerHTML\" hx-target=\"#connected-label\" hx-trigger=\"disconnected from:window\" hx-post=\"/disconnected\"></div></m-label>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" y=\"2\" width=\"5\" height=\"0.5\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\" hx-swap=\"outerHTML\" hx-target=\"#connected-label\" hx-vals=\"js:{ connectionId: event.detail.connectionId }\"><div hidden hx-trigger=\"connected from:window\" hx-post=\"/connected\"></div><div hidden hx-trigger=\"disconnected from:window\" hx-post=\"/disconnected\"></div></m-label>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
+		}
+		return templ_7745c5c3_Err
+	})
+}
+
+func makeUptimeText(uptime time.Duration) string {
+	uptimeMinutes := int(uptime.Minutes())
+	uptimeSeconds := int(uptime.Seconds()) - uptimeMinutes*60
+	var uptimeText string
+	if uptimeMinutes > 0 {
+		uptimeText = fmt.Sprintf("Uptime: %dm %2ds", uptimeMinutes, uptimeSeconds)
+	} else {
+		uptimeText = fmt.Sprintf("Uptime: %ds", uptimeSeconds)
+	}
+	return uptimeText
+}
+
+func Uptime(uptime time.Duration) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var5 == nil {
+			templ_7745c5c3_Var5 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<m-label id=\"uptime-label\" content=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(makeUptimeText(uptime))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 66, Col: 34}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" y=\"3\" width=\"5\" height=\"0.5\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\" hx-trigger=\"every 1s\" hx-get=\"/uptime\" hx-vals=\"js:{ts: document.timeline.currentTime}\" hx-swap=\"outerHTML\"></m-label>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -150,21 +200,21 @@ func Dice(value int, anims []Animation) templ.Component {
 			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var5 == nil {
-			templ_7745c5c3_Var5 = templ.NopComponent
+		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var7 == nil {
+			templ_7745c5c3_Var7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<m-model id=\"dice\" src=\"/assets/dice.glb\" y=\"1\" hx-trigger=\"click\" hx-swap=\"outerHTML\" hx-get=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<m-model hx-ext=\"morphdom-swap\" id=\"dice\" src=\"/assets/dice.glb\" y=\"1\" hx-trigger=\"click\" hx-swap=\"morphdom\" hx-get=\"/roll\" hx-vals=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/roll?from=%d", value))
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("js:{ts: document.timeline.currentTime, from: %d}", value))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 75, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 109, Col: 82}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -195,9 +245,9 @@ func Animations(anims []Animation) templ.Component {
 			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var7 == nil {
-			templ_7745c5c3_Var7 = templ.NopComponent
+		templ_7745c5c3_Var9 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var9 == nil {
+			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		for _, anim := range anims {
@@ -205,12 +255,12 @@ func Animations(anims []Animation) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(anim.ID)
+			var templ_7745c5c3_Var10 string
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(anim.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 84, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 118, Col: 15}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -218,12 +268,12 @@ func Animations(anims []Animation) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%v", anim.Easing))
+			var templ_7745c5c3_Var11 string
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%v", anim.Easing))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 85, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 119, Col: 42}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -231,12 +281,12 @@ func Animations(anims []Animation) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(anim.Attr)
+			var templ_7745c5c3_Var12 string
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(anim.Attr)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 86, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 120, Col: 19}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -244,12 +294,12 @@ func Animations(anims []Animation) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.DurationMs))
+			var templ_7745c5c3_Var13 string
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.DurationMs))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 87, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 121, Col: 48}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -257,12 +307,12 @@ func Animations(anims []Animation) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var12 string
-			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.StartTimeMs))
+			var templ_7745c5c3_Var14 string
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.StartTimeMs))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 88, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 122, Col: 51}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -270,12 +320,12 @@ func Animations(anims []Animation) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var13 string
-			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.Start))
+			var templ_7745c5c3_Var15 string
+			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.Start))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 89, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 123, Col: 40}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -283,12 +333,12 @@ func Animations(anims []Animation) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var14 string
-			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.End))
+			var templ_7745c5c3_Var16 string
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.End))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 90, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 124, Col: 36}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -296,12 +346,12 @@ func Animations(anims []Animation) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", anim.Loop))
+			var templ_7745c5c3_Var17 string
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", anim.Loop))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 91, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 125, Col: 38}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -325,14 +375,38 @@ func DiceClickLabel(count int, oob bool) templ.Component {
 			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var16 == nil {
-			templ_7745c5c3_Var16 = templ.NopComponent
+		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var18 == nil {
+			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<m-label id=\"click-label\" width=\"5\" height=\"0.5\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\" content=\"Click the dice!\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<m-label id=\"click-label\" width=\"5\" height=\"0.5\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
+		}
+		if count == 0 {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" content=\"Click the dice!\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" content=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var19 string
+			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d clicks!", count))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 141, Col: 45}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
 		if oob {
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" hx-swap-oob=\"true\"")
@@ -359,12 +433,12 @@ func Init(light mml.Light) templ.Component {
 			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var17 == nil {
-			templ_7745c5c3_Var17 = templ.NopComponent
+		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var20 == nil {
+			templ_7745c5c3_Var20 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<html><head><script src=\"https://unpkg.com/htmx.org@1.9.12\"></script><meta name=\"htmx-config\" content=\"{&#34;selfRequestsOnly&#34;:false}\"></head><body>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<html><head><script src=\"https://unpkg.com/htmx.org@1.9.12\"></script><script src=\"https://unpkg.com/htmx.org@1.9.12/dist/ext/morphdom-swap.js\"></script><script src=\"https://unpkg.com/morphdom@2.7.2/dist/morphdom-umd.js\"></script><meta name=\"htmx-config\" content=\"{&#34;selfRequestsOnly&#34;:false}\"></head><body>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -372,7 +446,7 @@ func Init(light mml.Light) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Labels --><m-group y=\"5\"><m-label id=\"uptime-label\" y=\"3\" width=\"5\" height=\"0.5\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\" hx-trigger=\"every 1s\" hx-get=\"/uptime\" hx-swap=\"outerHTML\"></m-label>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!-- Labels --><m-group y=\"5\"><m-label id=\"htmx-label\" y=\"4\" width=\"5\" height=\"0.5\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\" content=\"MML starter template in HTMX\"></m-label> <m-label id=\"uptime-label\" y=\"3\" width=\"5\" height=\"0.5\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\" hx-trigger=\"every 1s\" hx-get=\"/uptime\" hx-swap=\"outerHTML\"></m-label>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -380,7 +454,7 @@ func Init(light mml.Light) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<m-label id=\"change-light-button\" y=\"1\" width=\"5\" height=\"0.5\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\" content=\"Click to change light colour with HTMX!\" hx-trigger=\"click\" hx-get=\"/light\" hx-target=\"#light\" hx-swap=\"outerHTML\"></m-label>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<m-label id=\"change-light-button\" y=\"1\" width=\"5\" height=\"0.5\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\" content=\"Click to change light colour\" hx-trigger=\"click\" hx-get=\"/light\" hx-target=\"#light\" hx-swap=\"outerHTML\"></m-label>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

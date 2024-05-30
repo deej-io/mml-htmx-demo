@@ -10,31 +10,13 @@ using server-side rendered HTML and HTMX for interactivity.
 
 It currently requires a patched version of JSDOM to fix the
 XPathExpression.evaluate implementation
-(https://github.com/jsdom/jsdom/pull/3719), and also some changes to the MML
-repo to allow loading of external resources
-(https://github.com/deej-io/mml#fixed-jsdom).
+(https://github.com/jsdom/jsdom/pull/3719).
 
 ## Requirements
 
 - Node.js
 - npm
 - go
-
-## Setting up vendored MML library
-
-The MML fork is added as a vendored submodule, however the `mml-server` project
-configures this and links it as part of a preinstall step.
-
-## Building
-
-To build the MML server:
-
-```bash
-cd mml-server
-npm install
-```
-
-The API server is built by air when it is run, so there is no manual step required.
 
 ## Running the servers
 
@@ -53,5 +35,4 @@ npm start
 
 Open client endpoint in your browser
 
-http://localhost:8080/client
-
+http://localhost:808k

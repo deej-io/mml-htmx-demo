@@ -4,6 +4,15 @@ import "fmt"
 
 templ Client(wsUrl string) {
 	<html>
-		<script src={ string(templ.URL(fmt.Sprintf("https://cdn.jsdelivr.net/npm/mml-web-client@0.11.2?websocketUrl=%s", wsUrl))) }></script>
+		<script src={ string(templ.URL(fmt.Sprintf("https://cdn.jsdelivr.net/npm/mml-web-client@0.15.0?websocketUrl=%s", wsUrl))) }></script>
+		<body>
+			<a
+				href="https://github.com/deej-io/mml-htmx-demo"
+				target="_blank"
+				style="position: fixed; bottom: 1vw; left: 1vw; font-size: 2vw; z-index:2"
+			>
+				src: deej-io/mml-htmx-demo
+			</a>
+		</body>
 	</html>
 }

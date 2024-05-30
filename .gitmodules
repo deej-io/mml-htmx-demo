@@ -1,4 +1,0 @@
-[submodule "vendor/mml"]
-	path = vendor/mml
-	url = git@github.com:deej-io/mml
-	branch = fixed-jsdom
