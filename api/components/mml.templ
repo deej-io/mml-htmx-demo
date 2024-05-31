@@ -5,6 +5,7 @@ import (
 	"deej.io/mml-htmx-demo/api/mml"
 	"fmt"
 	"time"
+	"sync"
 )
 
 func Attrs(model any) (attrs templ.Attributes) {
@@ -29,13 +30,51 @@ templ Light(model mml.Light) {
 	></m-light>
 }
 
-templ ConnectedClients(count int) {
+type Stats struct {
+	mutex sync.Mutex
+	CurrentConnections map[string]struct{}
+	AllTimeConnections map[string]struct{}
+	Rolls int64
+	PeakConnections int
+}
+
+func NewStats() *Stats {
+	return &Stats{
+		CurrentConnections: make(map[string]struct{}),
+		AllTimeConnections: make(map[string]struct{}),
+	}
+}
+
+func (s *Stats) Connect(id string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.CurrentConnections[id] = struct{}{}
+	s.AllTimeConnections[id] = struct{}{}
+	if cc := len(s.CurrentConnections); cc > s.PeakConnections {
+		s.PeakConnections = cc
+	}
+}
+
+func (s *Stats) Disconnect(id string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	delete(s.CurrentConnections, id)
+}
+
+func (s *Stats) Roll() {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.Rolls++
+}
+
+
+templ ConnectedClients(stats *Stats) {
 	<m-label
 		id="connected-label"
-		content={ fmt.Sprintf("Connected clients: %d", count) }
+		content={ fmt.Sprintf("Connected clients: current=%d, peak=%d, total:%d", len(stats.CurrentConnections), stats.PeakConnections, len(stats.AllTimeConnections)) }
 		y="2"
 		width="5"
-		height="0.5"
+		height="0.75"
 		color="#bfdbfe"
 		font-color="#172554"
 		alignment="center"
@@ -138,7 +177,7 @@ templ DiceClickLabel(count int, oob bool) {
 		if count == 0 {
 			content="Click the dice!"
 		} else {
-			content={ fmt.Sprintf("%d clicks!", count) }
+			content={ fmt.Sprintf("%d rolls!", count) }
 		}
 		if oob {
 			hx-swap-oob="true"
@@ -180,7 +219,7 @@ templ Init(light mml.Light) {
 					hx-get="/uptime"
 					hx-swap="outerHTML"
 				></m-label>
-				@ConnectedClients(0)
+				@ConnectedClients(NewStats())
 				<m-label
 					id="change-light-button"
 					y="1"

@@ -15,8 +15,7 @@ import (
 )
 
 func main() {
-	connections := make(map[string]struct{})
-	rolls := 0
+	stats := components.NewStats()
 
 	mmlServerWSURI := os.Getenv("MML_SERVER_WS_URI")
 	if mmlServerWSURI == "" {
@@ -95,17 +94,17 @@ func main() {
 	http.HandleFunc("/connected", func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		id := r.Form.Get("connectionId")
-		connections[id] = struct{}{}
-		slog.Info("/connected", slog.String("connectionId", id), slog.Int("active", len(connections)))
-		components.ConnectedClients(len(connections)).Render(r.Context(), w)
+		stats.Connect(id)
+		slog.Info("/connected", slog.String("connectionId", id), slog.Int("active", len(stats.CurrentConnections)))
+		components.ConnectedClients(stats).Render(r.Context(), w)
 	})
 
 	http.HandleFunc("/disconnected", func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		id := r.Form.Get("connectionId")
-		delete(connections, id)
-		slog.Info("/disconnected", slog.String("connectionId", id), slog.Int("active", len(connections)))
-		components.ConnectedClients(len(connections)).Render(r.Context(), w)
+		stats.Disconnect(id)
+		slog.Info("/disconnected", slog.String("connectionId", id), slog.Int("active", len(stats.CurrentConnections)))
+		components.ConnectedClients(stats).Render(r.Context(), w)
 	})
 
 	rollMap := [6][3]int{
@@ -133,10 +132,10 @@ func main() {
 			{ID: "ry-anim", Easing: components.EaseOutCubic,      Attr: "ry", StartTimeMs: startTime, DurationMs: 500, Start: current[1], End: target[1], Loop: false},
 			{ID: "rz-anim", Easing: components.EaseOutCubic,      Attr: "rz", StartTimeMs: startTime, DurationMs: 500, Start: current[2], End: target[2], Loop: false},
 		}
-		rolls++
+		stats.Roll()
 		components.All(
 			components.Dice(to, anims),
-			components.DiceClickLabel(rolls, true),
+			components.DiceClickLabel(int(stats.Rolls), true),
 		).Render(r.Context(), w)
 	})
 

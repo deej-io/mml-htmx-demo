@@ -14,6 +14,7 @@ import (
 	"deej.io/mml-htmx-demo/api/mml"
 	"fmt"
 	"github.com/fatih/structs"
+	"sync"
 	"time"
 )
 
@@ -85,7 +86,44 @@ func Light(model mml.Light) templ.Component {
 	})
 }
 
-func ConnectedClients(count int) templ.Component {
+type Stats struct {
+	mutex              sync.Mutex
+	CurrentConnections map[string]struct{}
+	AllTimeConnections map[string]struct{}
+	Rolls              int64
+	PeakConnections    int
+}
+
+func NewStats() *Stats {
+	return &Stats{
+		CurrentConnections: make(map[string]struct{}),
+		AllTimeConnections: make(map[string]struct{}),
+	}
+}
+
+func (s *Stats) Connect(id string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.CurrentConnections[id] = struct{}{}
+	s.AllTimeConnections[id] = struct{}{}
+	if cc := len(s.CurrentConnections); cc > s.PeakConnections {
+		s.PeakConnections = cc
+	}
+}
+
+func (s *Stats) Disconnect(id string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	delete(s.CurrentConnections, id)
+}
+
+func (s *Stats) Roll() {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.Rolls++
+}
+
+func ConnectedClients(stats *Stats) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -103,15 +141,15 @@ func ConnectedClients(count int) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Connected clients: %d", count))
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Connected clients: current=%d, peak=%d, total:%d", len(stats.CurrentConnections), stats.PeakConnections, len(stats.AllTimeConnections)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 35, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 74, Col: 160}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" y=\"2\" width=\"5\" height=\"0.5\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\" hx-swap=\"outerHTML\" hx-target=\"#connected-label\" hx-vals=\"js:{ connectionId: event.detail.connectionId }\"><div hidden hx-trigger=\"connected from:window\" hx-post=\"/connected\"></div><div hidden hx-trigger=\"disconnected from:window\" hx-post=\"/disconnected\"></div></m-label>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" y=\"2\" width=\"5\" height=\"0.75\" color=\"#bfdbfe\" font-color=\"#172554\" alignment=\"center\" hx-swap=\"outerHTML\" hx-target=\"#connected-label\" hx-vals=\"js:{ connectionId: event.detail.connectionId }\"><div hidden hx-trigger=\"connected from:window\" hx-post=\"/connected\"></div><div hidden hx-trigger=\"disconnected from:window\" hx-post=\"/disconnected\"></div></m-label>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -154,7 +192,7 @@ func Uptime(uptime time.Duration) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(makeUptimeText(uptime))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 66, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 105, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -212,7 +250,7 @@ func Dice(value int, anims []Animation) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("js:{ts: document.timeline.currentTime, from: %d}", value))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 109, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 148, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -258,7 +296,7 @@ func Animations(anims []Animation) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(anim.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 118, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 157, Col: 15}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -271,7 +309,7 @@ func Animations(anims []Animation) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%v", anim.Easing))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 119, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 158, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -284,7 +322,7 @@ func Animations(anims []Animation) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(anim.Attr)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 120, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 159, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -297,7 +335,7 @@ func Animations(anims []Animation) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.DurationMs))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 121, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 160, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -310,7 +348,7 @@ func Animations(anims []Animation) templ.Component {
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.StartTimeMs))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 122, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 161, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -323,7 +361,7 @@ func Animations(anims []Animation) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.Start))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 123, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 162, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -336,7 +374,7 @@ func Animations(anims []Animation) templ.Component {
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", anim.End))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 124, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 163, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -349,7 +387,7 @@ func Animations(anims []Animation) templ.Component {
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%t", anim.Loop))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 125, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 164, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -395,9 +433,9 @@ func DiceClickLabel(count int, oob bool) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var19 string
-			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d clicks!", count))
+			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d rolls!", count))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 141, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/mml.templ`, Line: 180, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -450,7 +488,7 @@ func Init(light mml.Light) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ConnectedClients(0).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ConnectedClients(NewStats()).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
